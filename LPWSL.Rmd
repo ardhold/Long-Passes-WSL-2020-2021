@@ -1,0 +1,3251 @@
+---
+title: "WSL Long Passes 20/21"
+author: "Arden Holden"
+date: "2022-08-10"
+output: html_document
+---
+
+# Package Setup
+```{r Package Setup, eval=TRUE, message=FALSE, warning=FALSE, results='hide'}
+library(tidyverse)
+library(StatsBombR)
+FreeCompetitions()
+Comp <- FreeCompetitions() %>%
+  filter(competition_id==37 & season_name=="2020/2021")%>%
+  filter(competition_gender=="female")
+Matches <- FreeMatches(Comp)
+StatsBombData <- StatsBombFreeEvents(MatchesDF = Matches, Parallel = T)
+StatsBombData = allclean(StatsBombData)
+```
+
+# Extracting & Analyzing the Long Pass Data for Each Team
+```{r Teams, eval=FALSE}
+#Arsenal
+{ArsenalHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Arsenal WFC")
+ArsHGameData<-StatsBombFreeEvents(MatchesDF = ArsenalHomeMatches, Parallel = T)
+ArsHGameData = allclean(ArsHGameData)
+ArsenalAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Arsenal WFC")
+ArsAGameData<-StatsBombFreeEvents(MatchesDF = ArsenalAwayMatches, Parallel = T)
+ArsAGameData = allclean(ArsAGameData)
+
+ArsHLineups<-ArsHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Arsenal WFC")
+LongPassArsH<- ArsHGameData %>%
+  filter(team.name=="Arsenal WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+         position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+         position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#Arsenal vs Reading
+ARS_REA<-Matches %>%
+  filter(match_id==3764233)
+ARS_REA_Data<-StatsBombFreeEvents(MatchesDF = ARS_REA, Parallel = T)
+
+P1_ARS_REA<- ARS_REA_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#foul. When Arsenal regained possession after Reading sequence, they were in their own defensive third
+P2_ARS_REA<- ARS_REA_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#sequence leads to goal
+P3_ARS_REA<- ARS_REA_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession and don't regain possession until it's in their own defensive third
+
+#Arsenal vs Brighton
+ARS_BRI<-Matches %>%
+  filter(match_id==3775557)
+ARS_BRI_Data<-StatsBombFreeEvents(MatchesDF = ARS_BRI, Parallel = T)
+
+P_ARS_BRI<- ARS_BRI_Data %>%
+  filter(minute>=87 & minute<=89)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass cleared for a throw in. Arsenal able to keep possession in attacking third after the throw in and get a shot off in the sequence
+
+#Arsenal vs Birmingham
+ARS_BIR<-Matches %>%
+  filter(match_id==3775584)
+ARS_BIR_Data<-StatsBombFreeEvents(MatchesDF = ARS_BIR, Parallel = T)
+
+P_ARS_BIR<- ARS_BIR_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass cleared and lost possession
+
+#Arsenal vs Tottenham
+ARS_TOT<-Matches %>%
+  filter(match_id==3775586)
+ARS_TOT_Data<-StatsBombFreeEvents(MatchesDF = ARS_TOT, Parallel = T)
+
+P1_ARS_TOT<- ARS_TOT_Data %>%
+  filter(minute>=29 & minute<=31)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, lost possession, regained possession
+P2_ARS_TOT<- ARS_TOT_Data %>%
+  filter(minute>=44 & minute<=46)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Arsenal vs Man Utd
+ARS_UTD<-Matches %>%
+  filter(match_id==3775597)
+ARS_UTD_Data<-StatsBombFreeEvents(MatchesDF = ARS_UTD, Parallel = T)
+
+P1_ARS_UTD<- ARS_UTD_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but keep Utd in def third and get a throw in 25 seconds later. Shot from throw in
+P2_ARS_UTD<- ARS_UTD_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_ARS_UTD<- ARS_UTD_Data %>%
+  filter(minute>=86 & minute<=88)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Arsenal vs City
+ARS_MNC<-Matches %>%
+  filter(match_id==3775600)
+ARS_MNC_Data<-StatsBombFreeEvents(MatchesDF = ARS_MNC, Parallel = T)
+
+P_ARS_MNC<- ARS_MNC_Data %>%
+  filter(minute>=33 & minute<=35)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Arsenal vs Chelsea
+ARS_CHE<-Matches %>%
+  filter(match_id==3775627)
+ARS_CHE_Data<-StatsBombFreeEvents(MatchesDF = ARS_CHE, Parallel = T)
+
+P1_ARS_CHE<- ARS_CHE_Data %>%
+  filter(minute>=44 & minute<=46)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#Chelsea clear Arsenal possession, but Arsenal recover and they take a shot to end sequence (goal kick)
+P2_ARS_CHE<- ARS_CHE_Data %>%
+  filter(minute>=92 & minute<=94)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Arsenal vs Bristol City
+ARS_BRC<-Matches %>%
+  filter(match_id==3775657)
+ARS_BRC_Data<-StatsBombFreeEvents(MatchesDF = ARS_BRC, Parallel = T)
+
+P_ARS_BRC<- ARS_BRC_Data %>%
+  filter(minute>=79 & minute<=81)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassArsA<- ArsAGameData %>%
+  filter(team.name=="Arsenal WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#West Ham vs Arsenal
+ARS_WHU<-Matches %>%
+  filter(match_id==3764238)
+ARS_WHU_Data<-StatsBombFreeEvents(MatchesDF = ARS_WHU, Parallel = T)
+
+P_ARS_WHU<- ARS_WHU_Data %>%
+  filter(minute>=29 & minute<=31)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Chelsea vs Arsenal
+ARS_CHE2<-Matches %>%
+  filter(match_id==3775548)
+ARS_CHE2_Data<-StatsBombFreeEvents(MatchesDF = ARS_CHE2, Parallel = T)
+
+P1_ARS_CHE2<- ARS_CHE2_Data %>%
+  filter(minute>=69 & minute<=71)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#back and forth that occurs in Arsenal attacking third. A throw in, free kick and then shot
+P2_ARS_CHE2<- ARS_CHE2_Data %>%
+  filter(minute>=77 & minute<=79)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_ARS_CHE2<- ARS_CHE2_Data %>%
+  filter(minute>=87 & minute<=89)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Man Utd vs Arsenal
+ARS_MNU<-Matches %>%
+  filter(match_id==3775551)
+ARS_MNU_Data<-StatsBombFreeEvents(MatchesDF = ARS_MNU, Parallel = T)
+
+P_ARS_MNU<- ARS_MNU_Data %>%
+  filter(minute>=3 & minute<=5)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Bristol City vs Arsenal
+ARS_BRC2<-Matches %>%
+  filter(match_id==3775569)
+ARS_BRC2_Data<-StatsBombFreeEvents(MatchesDF = ARS_BRC2, Parallel = T)
+
+P_ARS_BRC2<- ARS_BRC2_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_ARS_BRC2<- ARS_BRC2_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared for throw in. Possession spell in attacking third after throw in
+
+#City vs Arsenal
+ARS_MNC2<-Matches %>%
+  filter(match_id==3775583)
+ARS_MNC2_Data<-StatsBombFreeEvents(MatchesDF = ARS_MNC2, Parallel = T)
+
+P_ARS_MNC2<- ARS_MNC2_Data %>%
+  filter(minute>=70 & minute<=72)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Reading vs Arsenal
+ARS_REA2<-Matches %>%
+  filter(match_id==3775589)
+ARS_REA2_Data<-StatsBombFreeEvents(MatchesDF = ARS_REA2, Parallel = T)
+
+P_ARS_REA2<- ARS_REA2_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#Reading cleared, but Arsenal recovered and had possession spell in attacking third
+
+#Aston Villa vs Arsenal
+ARS_AVI<-Matches %>%
+  filter(match_id==3775648)
+ARS_AVI_Data<-StatsBombFreeEvents(MatchesDF = ARS_AVI, Parallel = T)
+
+P_ARS_AVI<- ARS_AVI_Data %>%
+  filter(minute>=33 & minute<=35)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession in and on the edge of the attacking third. Villa finally able to clear it back into Arsenal's defensive third
+}
+
+#Aston Villa
+{VillaHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Aston Villa")
+VillaHGameData<-StatsBombFreeEvents(MatchesDF = VillaHomeMatches, Parallel = T)
+VillaHGameData = allclean(VillaHGameData)
+VillaAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Aston Villa")
+VillaAGameData<-StatsBombFreeEvents(MatchesDF = VillaAwayMatches, Parallel = T)
+VillaAGameData = allclean(VillaAGameData)
+
+VillaLineups<-VillaHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Aston Villa")
+LongPassVillaH<- VillaHGameData %>%
+  filter(team.name=="Aston Villa")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#Aston Villa vs Bristol City
+AVI_BRC<-Matches %>%
+  filter(match_id==3775540)
+AVI_BRC_Data<-StatsBombFreeEvents(MatchesDF = AVI_BRC, Parallel = T)
+
+P1_AVI_BRC<- AVI_BRC_Data %>%
+  filter(minute>=16 & minute<=18)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but recovered on the edge of their attacking third. Reentered attacking third and earned corner
+P2_AVI_BRC<- AVI_BRC_Data %>%
+  filter(minute>=85 & minute<=87)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs West Ham
+AVI_WHU<-Matches %>%
+  filter(match_id==3775544)
+AVI_WHU_Data<-StatsBombFreeEvents(MatchesDF = AVI_WHU, Parallel = T)
+
+P1_AVI_WHU<- AVI_WHU_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_AVI_WHU<- AVI_WHU_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_AVI_WHU<- AVI_WHU_Data %>%
+  filter(minute>=83 & minute<=85)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs Man Utd
+AVI_UTD<-Matches %>%
+  filter(match_id==3775566)
+AVI_UTD_Data<-StatsBombFreeEvents(MatchesDF = AVI_UTD, Parallel = T)
+
+P_AVI_UTD<- AVI_UTD_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs Everton
+AVI_EVE<-Matches %>%
+  filter(match_id==3775575)
+AVI_EVE_Data<-StatsBombFreeEvents(MatchesDF = AVI_EVE, Parallel = T)
+
+P1_AVI_EVE<- AVI_EVE_Data %>%
+  filter(minute>=38 & minute<=40)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_AVI_EVE<- AVI_EVE_Data %>%
+  filter(minute>=85 & minute<=87)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but 29 seconds later were able to recover in their attacking third. Sequence ends w/ goal kick
+
+#Villa vs Tottenham
+AVI_TOT<-Matches %>%
+  filter(match_id==3775633)
+AVI_TOT_Data<-StatsBombFreeEvents(MatchesDF = AVI_TOT, Parallel = T)
+
+P1_AVI_TOT<- AVI_TOT_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#a bit of back and forth, but Villa able to have a little spell of possession in attacking third and earn corner
+P2_AVI_TOT<- AVI_TOT_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs Birmingham
+AVI_BIR<-Matches %>%
+  filter(match_id==3775641)
+AVI_BIR_Data<-StatsBombFreeEvents(MatchesDF = AVI_BIR, Parallel = T)
+
+P1_AVI_BIR<- AVI_BIR_Data %>%
+  filter(minute>=26 & minute<=28)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_AVI_BIR<- AVI_BIR_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_AVI_BIR<- AVI_BIR_Data %>%
+  filter(minute>=63 & minute<=65)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs Brighton
+AVI_BRI<-Matches %>%
+  filter(match_id==3775642)
+AVI_BRI_Data<-StatsBombFreeEvents(MatchesDF = AVI_BRI, Parallel = T)
+
+P1_AVI_BRI<- AVI_BRI_Data %>%
+  filter(minute>=13 & minute<=15)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#small spell of possession that results in goal kick
+P2_AVI_BRI<- AVI_BRI_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Villa vs Chelsea
+AVI_CHE<-Matches %>%
+  filter(match_id==3775646)
+AVI_CHE_Data<-StatsBombFreeEvents(MatchesDF = AVI_CHE, Parallel = T)
+
+P1_AVI_CHE<- AVI_CHE_Data %>%
+  filter(minute>=38 & minute<=39)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_AVI_CHE<- AVI_CHE_Data %>%
+  filter(minute>=40 & minute<=42)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_AVI_CHE<- AVI_CHE_Data %>%
+  filter(minute>=56 & minute<=58)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in and possession
+
+LongPassVillaA<- VillaAGameData %>%
+  filter(team.name=="Aston Villa")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#Brighton vs Villa
+AVI_BRI2<-Matches %>%
+  filter(match_id==3775556)
+AVI_BRI2_Data<-StatsBombFreeEvents(MatchesDF = AVI_BRI2, Parallel = T)
+
+P_AVI_BRI2<- AVI_BRI2_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Arsenal vs Villa
+AVI_ARS<-Matches %>%
+  filter(match_id==3775560)
+AVI_ARS_Data<-StatsBombFreeEvents(MatchesDF = AVI_ARS, Parallel = T)
+
+P_AVI_ARS<- AVI_ARS_Data %>%
+  filter(minute>=71 & minute<=73)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Chelsea vs Villa
+AVI_CHE2<-Matches %>%
+  filter(match_id==3775581)
+AVI_CHE2_Data<-StatsBombFreeEvents(MatchesDF = AVI_CHE2, Parallel = T)
+
+P_AVI_CHE2<- AVI_CHE2_Data %>%
+  filter(minute>=83 & minute<=85)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#West Ham vs Villa
+AVI_WHU2<-Matches %>%
+  filter(match_id==3775599)
+AVI_WHU2_Data<-StatsBombFreeEvents(MatchesDF = AVI_WHU2, Parallel = T)
+
+P1_AVI_WHU2<- AVI_WHU2_Data %>%
+  filter(minute>=6 & minute<=8)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_AVI_WHU2<- AVI_WHU2_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Tottenham vs Villa
+AVI_TOT2<-Matches %>%
+  filter(match_id==3775615)
+AVI_TOT2_Data<-StatsBombFreeEvents(MatchesDF = AVI_TOT2, Parallel = T)
+
+P_AVI_TOT2<- AVI_TOT2_Data %>%
+  filter(minute>=1 & minute<=3)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Everton vs Villa
+AVI_EVE2<-Matches %>%
+  filter(match_id==3775634)
+AVI_EVE2_Data<-StatsBombFreeEvents(MatchesDF = AVI_EVE2, Parallel = T)
+
+P1_AVI_EVE2<- AVI_EVE2_Data %>%
+  filter(minute>=6 & minute<=8)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#back and forth with spell of possession. earned corner
+P2_AVI_EVE2<- AVI_EVE2_Data %>%
+  filter(minute>=30 & minute<=32)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_AVI_EVE2<- AVI_EVE2_Data %>%
+  filter(minute>=33 & minute<=35)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_AVI_EVE2<- AVI_EVE2_Data %>%
+  filter(minute>=57 & minute<=59)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lose possession, but get throw in. lose possession and have Everton pinned, but ends in goal kick
+}
+
+#Birmingham City
+{BCFCHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Birmingham City WFC")
+BCFCHGameData<-StatsBombFreeEvents(MatchesDF = BCFCHomeMatches, Parallel = T)
+BCFCHGameData = allclean(BCFCHGameData)
+BCFCAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Birmingham City WFC")
+BCFCAGameData<-StatsBombFreeEvents(MatchesDF = BCFCAwayMatches, Parallel = T)
+BCFCAGameData = allclean(BCFCAGameData)
+
+BCFCLineups<-BCFCHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Birmingham City WFC")
+LongPassBCFCH<- BCFCHGameData %>%
+  filter(team.name=="Birmingham City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Left Center Midfield" | position.name=="Right Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs United
+BC_UTD<-Matches %>%
+  filter(match_id==3764237)
+BC_UTD_Data<-StatsBombFreeEvents(MatchesDF = BC_UTD, Parallel = T)
+
+P_BC_UTD<- BC_UTD_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, throw in, goal kick
+
+#vs City
+BC_MNC<-Matches %>%
+  filter(match_id==3775547)
+BC_MNC_Data<-StatsBombFreeEvents(MatchesDF = BC_MNC, Parallel = T)
+
+P1_BC_MNC<- BC_MNC_Data %>%
+  filter(minute>=1 & minute<=3)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, throw in, lost possession; Hampton pass
+P2_BC_MNC<- BC_MNC_Data %>%
+  filter(minute>=24 & minute<=26)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton pass
+P3_BC_MNC<- BC_MNC_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton pass
+P4_BC_MNC<- BC_MNC_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+BC_TOT<-Matches %>%
+  filter(match_id==3775549)
+BC_TOT_Data<-StatsBombFreeEvents(MatchesDF = BC_TOT, Parallel = T)
+
+P1_BC_TOT<- BC_TOT_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#Spurs clear pass, but BC able to get it. Sequence ends w/ goal kick; Hampton pass
+P2_BC_TOT<- BC_TOT_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton pass
+
+#vs West Ham
+BC_WHU<-Matches %>%
+  filter(match_id==3775553)
+BC_WHU_Data<-StatsBombFreeEvents(MatchesDF = BC_WHU, Parallel = T)
+
+P1_BC_WHU<- BC_WHU_Data %>%
+  filter(minute>=19 & minute<=21)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BC_WHU<- BC_WHU_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Aston Villa
+BC_AVI<-Matches %>%
+  filter(match_id==3775568)
+BC_AVI_Data<-StatsBombFreeEvents(MatchesDF = BC_AVI, Parallel = T)
+
+P1_BC_AVI<- BC_AVI_Data %>%
+  filter(minute>=0 & minute<=2)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession; Hampton pass
+P2_BC_AVI<- BC_AVI_Data %>%
+  filter(minute>=66 & minute<=68)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but able to keep Villa in their defensive third. Earn throw in which leads to possession ending w/ corner
+P3_BC_AVI<- BC_AVI_Data %>%
+  filter(minute>=80 & minute<=82)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession; Hampton pass
+
+#vs Chelsea
+BC_CHE<-Matches %>%
+  filter(match_id==3775572)
+BC_CHE_Data<-StatsBombFreeEvents(MatchesDF = BC_CHE, Parallel = T)
+
+P_BC_CHE<- BC_CHE_Data %>%
+  filter(minute>=19 & minute<=21)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession
+
+#vs Reading
+BC_REA<-Matches %>%
+  filter(match_id==3775612)
+BC_REA_Data<-StatsBombFreeEvents(MatchesDF = BC_REA, Parallel = T)
+
+P_BC_REA<- BC_REA_Data %>%
+  filter(minute>=35 & minute<=37)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession
+
+#vs Brighton
+BC_BRI<-Matches %>%
+  filter(match_id==3775647)
+BC_BRI_Data<-StatsBombFreeEvents(MatchesDF = BC_BRI, Parallel = T)
+
+P1_BC_BRI<- BC_BRI_Data %>%
+  filter(minute>=17 & minute<=37)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession; Hampton pass
+P2_BC_BRI<- BC_BRI_Data %>%
+  filter(minute>=90 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession ends w/ goal kick; Hampton pass
+
+#vs Everton
+BC_EVE<-Matches %>%
+  filter(match_id==3775653)
+BC_EVE_Data<-StatsBombFreeEvents(MatchesDF = BC_EVE, Parallel = T)
+
+P_BC_EVE<- BC_EVE_Data %>%
+  filter(minute>=37 & minute<=39)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Bristol City
+BC_BRC<-Matches %>%
+  filter(match_id==3775654)
+BC_BRC_Data<-StatsBombFreeEvents(MatchesDF = BC_BRC, Parallel = T)
+
+P1_BC_BRC<- BC_BRC_Data %>%
+  filter(minute>=17 & minute<=18)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, throw in. lost possession on throw in sequence
+P2_BC_BRC<- BC_BRC_Data %>%
+  filter(minute>=18 & minute<=20)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_BC_BRC<- BC_BRC_Data %>%
+  filter(minute>=75 & minute<=77)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession out for throw. Back and forth in attacking third before falling out. Hampton pass
+
+LongPassBCFCA<- BCFCAGameData %>%
+  filter(team.name=="Birmingham City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Left Center Midfield" | position.name=="Right Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Brighton
+BC_BRI2<-Matches %>%
+  filter(match_id==3764231)
+BC_BRI2_Data<-StatsBombFreeEvents(MatchesDF = BC_BRI2, Parallel = T)
+
+P1_BC_BRI2<- BC_BRI2_Data %>%
+  filter(minute>=40 & minute<=42)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BC_BRI2<- BC_BRI2_Data %>%
+  filter(minute>=88 & minute<=90)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Chelsea
+BC_CHE2<-Matches %>%
+  filter(match_id==3775565)
+BC_CHE2_Data<-StatsBombFreeEvents(MatchesDF = BC_CHE2, Parallel = T)
+
+P1_BC_CHE2<- BC_CHE2_Data %>%
+  filter(minute>=23 & minute<=25)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BC_CHE2<- BC_CHE2_Data %>%
+  filter(minute>=36 & minute<=38)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_BC_CHE2<- BC_CHE2_Data %>%
+  filter(minute>=66 & minute<=68)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recoveries, possession, shot. Hampton pass
+P4_BC_CHE2<- BC_CHE2_Data %>%
+  filter(minute>=81 & minute<=83)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ City
+BC_MNC2<-Matches %>%
+  filter(match_id==3775574)
+BC_MNC2_Data<-StatsBombFreeEvents(MatchesDF = BC_MNC2, Parallel = T)
+
+P_BC_MNC2<- BC_MNC2_Data %>%
+  filter(minute>=88 & minute<=90)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton Pass
+
+#@ Arsenal
+BC_ARS<-Matches %>%
+  filter(match_id==3775584)
+BC_ARS_Data<-StatsBombFreeEvents(MatchesDF = BC_ARS, Parallel = T)
+
+P1_BC_ARS<- BC_ARS_Data %>%
+  filter(minute>=3 & minute<=5)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton Pass
+P2_BC_ARS<- BC_ARS_Data %>%
+  filter(minute>=25 & minute<=27)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#found forward (possession), ends in goal kick. Hampton Pass
+
+#@ Everton
+BC_EVE2<-Matches %>%
+  filter(match_id==3775590)
+BC_EVE2_Data<-StatsBombFreeEvents(MatchesDF = BC_EVE2, Parallel = T)
+
+P_BC_EVE2<- BC_EVE2_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+
+#@ Reading
+BC_REA2<-Matches %>%
+  filter(match_id==3775618)
+BC_REA2_Data<-StatsBombFreeEvents(MatchesDF = BC_REA2, Parallel = T)
+
+P1_BC_REA2<- BC_REA2_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BC_REA2<- BC_REA2_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recoveries, possession
+P3_BC_REA2<- BC_REA2_Data %>%
+  filter(minute>=54 & minute<=56)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+
+#@ Bristol City
+BC_BRC2<-Matches %>%
+  filter(match_id==3775636)
+BC_BRC2_Data<-StatsBombFreeEvents(MatchesDF = BC_BRC2, Parallel = T)
+
+P_BC_BRC2<- BC_BRC2_Data %>%
+  filter(minute>=8 & minute<=10)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ West Ham
+BC_WHU2<-Matches %>%
+  filter(match_id==3775643)
+BC_WHU2_Data<-StatsBombFreeEvents(MatchesDF = BC_WHU2, Parallel = T)
+
+P_BC_WHU2<- BC_WHU2_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession; Hampton pass
+}
+
+#Brighton
+{BrightonHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Brighton & Hove Albion WFC")
+BrightonHGameData<-StatsBombFreeEvents(MatchesDF = BrightonHomeMatches, Parallel = T)
+BrightonHGameData = allclean(BrightonHGameData)
+BrightonAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Brighton & Hove Albion WFC")
+BrightonAGameData<-StatsBombFreeEvents(MatchesDF = BrightonAwayMatches, Parallel = T)
+BrightonAGameData = allclean(BrightonAGameData)
+
+BrightonLineups<-BrightonHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Brighton & Hove Albion WFC")
+LongPassBrightonH<- BrightonHGameData %>%
+  filter(team.name=="Brighton & Hove Albion WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Arsenal
+BHA_ARS<-Matches %>%
+  filter(match_id==3775543)
+BHA_ARS_Data<-StatsBombFreeEvents(MatchesDF = BHA_ARS, Parallel = T)
+
+P1_BHA_ARS<- BHA_ARS_Data %>%
+  filter(minute>=7 & minute<=9)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BHA_ARS<- BHA_ARS_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Villa
+BHA_AVI<-Matches %>%
+  filter(match_id==3775556)
+BHA_AVI_Data<-StatsBombFreeEvents(MatchesDF = BHA_AVI, Parallel = T)
+
+P1_BHA_AVI<- BHA_AVI_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass cleared for throw in, 2 possession actions in attacking third after throw in
+P2_BHA_AVI<- BHA_AVI_Data %>%
+  filter(minute>=96 & minute<=98)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs Chelsea
+BHA_CHE<-Matches %>%
+  filter(match_id==3775580)
+BHA_CHE_Data<-StatsBombFreeEvents(MatchesDF = BHA_CHE, Parallel = T)
+
+P1_BHA_CHE<- BHA_CHE_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BHA_CHE<- BHA_CHE_Data %>%
+  filter(minute>=83 & minute<=85)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Bristol City
+BHA_BRC<-Matches %>%
+  filter(match_id==3775585)
+BHA_BRC_Data<-StatsBombFreeEvents(MatchesDF = BHA_BRC, Parallel = T)
+
+P1_BHA_BRC<- BHA_BRC_Data %>%
+  filter(minute>=9 & minute<=11)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#earn free kick in attacking third. Free kick cleared
+P2_BHA_BRC<- BHA_BRC_Data %>%
+  filter(minute>=24 & minute<=26)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession on initial pass, recovered, possession
+P3_BHA_BRC<- BHA_BRC_Data %>%
+  filter(minute>=62 & minute<=64)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs West Ham
+BHA_WHU<-Matches %>%
+  filter(match_id==3775603)
+BHA_WHU_Data<-StatsBombFreeEvents(MatchesDF = BHA_WHU, Parallel = T)
+
+P1_BHA_WHU<- BHA_WHU_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#Pass cleared for throw in. Possession spell after throw in, shot taken
+P2_BHA_WHU<- BHA_WHU_Data %>%
+  filter(minute>=71 & minute<=73)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs United
+BHA_UTD<-Matches %>%
+  filter(match_id==3775617)
+BHA_UTD_Data<-StatsBombFreeEvents(MatchesDF = BHA_UTD, Parallel = T)
+
+P_BHA_UTD<- BHA_UTD_Data %>%
+  filter(minute>=43 & minute<=45)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs City
+BHA_MNC<-Matches %>%
+  filter(match_id==3775629)
+BHA_MNC_Data<-StatsBombFreeEvents(MatchesDF = BHA_MNC, Parallel = T)
+
+P_BHA_MNC<- BHA_MNC_Data %>%
+  filter(minute>=64 & minute<=66)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+BHA_TOT<-Matches %>%
+  filter(match_id==3775638)
+BHA_TOT_Data<-StatsBombFreeEvents(MatchesDF = BHA_TOT, Parallel = T)
+
+P_BHA_TOT<- BHA_TOT_Data %>%
+  filter(minute>=6 & minute<=8)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassBrightonA<- BrightonAGameData %>%
+  filter(team.name=="Brighton & Hove Albion WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ City
+BHA_MNC2<-Matches %>%
+  filter(match_id==3764241)
+BHA_MNC2_Data<-StatsBombFreeEvents(MatchesDF = BHA_MNC2, Parallel = T)
+
+P_BHA_MNC2<- BHA_MNC2_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Reading 
+BHA_REA<-Matches %>%
+  filter(match_id==3775579)
+BHA_REA_Data<-StatsBombFreeEvents(MatchesDF = BHA_REA, Parallel = T)
+
+P1_BHA_REA<- BHA_REA_Data %>%
+  filter(minute>=9 & minute<=11)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BHA_REA<- BHA_REA_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession, shot
+P3_BHA_REA<- BHA_REA_Data %>%
+  filter(minute>=78 & minute<=80)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_BHA_REA<- BHA_REA_Data %>%
+  filter(minute>=93 & minute<=95)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P4: lost possession
+#P5: possession, ball recoveries
+
+#@ Everton
+BHA_EVE<-Matches %>%
+  filter(match_id==3775582)
+BHA_EVE_Data<-StatsBombFreeEvents(MatchesDF = BHA_EVE, Parallel = T)
+
+P1_BHA_EVE<- BHA_EVE_Data %>%
+  filter(minute>=65 & minute<=67)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BHA_EVE<- BHA_EVE_Data %>%
+  filter(minute>=73 & minute<=75)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession, throw in
+P3_BHA_EVE<- BHA_EVE_Data %>%
+  filter(minute>=87 & minute<=89)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Tottenham
+BHA_TOT2<-Matches %>%
+  filter(match_id==3775588)
+BHA_TOT2_Data<-StatsBombFreeEvents(MatchesDF = BHA_TOT2, Parallel = T)
+
+P1_BHA_TOT2<- BHA_TOT2_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, corner
+P2_BHA_TOT2<- BHA_TOT2_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ West Ham
+BHA_WHU2<-Matches %>%
+  filter(match_id==3775623)
+BHA_WHU2_Data<-StatsBombFreeEvents(MatchesDF = BHA_WHU2, Parallel = T)
+
+P_BHA_WHU2<- BHA_WHU2_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in
+
+#@ Villa
+BHA_AVI2<-Matches %>%
+  filter(match_id==3775642)
+BHA_AVI2_Data<-StatsBombFreeEvents(MatchesDF = BHA_AVI2, Parallel = T)
+
+P_BHA_AVI2<- BHA_AVI2_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, regained possession, possession, shot
+
+#@ Birmingham
+BHA_BIR<-Matches %>%
+  filter(match_id==3775647)
+BHA_BIR_Data<-StatsBombFreeEvents(MatchesDF = BHA_BIR, Parallel = T)
+
+P_BHA_BIR<- BHA_BIR_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#free kick
+
+#@ Chelsea
+BHA_CHE2<-Matches %>%
+  filter(match_id==3775652)
+BHA_CHE2_Data<-StatsBombFreeEvents(MatchesDF = BHA_CHE2, Parallel = T)
+
+P_BHA_CHE2<- BHA_CHE2_Data %>%
+  filter(minute>=75 & minute<=78)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass cleared for throw in. Possession in throw in sequence ends w/ shot out for corner. Corner ends in goal
+}
+
+#Bristol City
+{BristolHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Bristol City WFC")
+BristolHGameData<-StatsBombFreeEvents(MatchesDF = BristolHomeMatches, Parallel = T)
+BristolHGameData = allclean(BristolHGameData)
+BristolAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Bristol City WFC")
+BristolAGameData<-StatsBombFreeEvents(MatchesDF = BristolAwayMatches, Parallel = T)
+BristolAGameData = allclean(BristolAGameData)
+
+BristolLineups<-BristolHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Bristol City WFC")
+LongPassBristolH<- BristolHGameData %>%
+  filter(team.name=="Bristol City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Everton
+BRC_EVE<-Matches %>%
+  filter(match_id==3764240)
+BRC_EVE_Data<-StatsBombFreeEvents(MatchesDF = BRC_EVE, Parallel = T)
+
+P1_BRC_EVE<- BRC_EVE_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BRC_EVE<- BRC_EVE_Data %>%
+  filter(minute>=52 & minute<=54)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in
+
+#vs Arsenal 
+BRC_ARS<-Matches %>%
+  filter(match_id==3775569)
+BRC_ARS_Data<-StatsBombFreeEvents(MatchesDF = BRC_ARS, Parallel = T)
+
+P_BRC_ARS<- BRC_ARS_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but able to keep Arsenal in their defensive third for 25 seconds and then regain possession and get a throw in
+
+#vs Brighton
+BRC_BHA<-Matches %>%
+  filter(match_id==3775595)
+BRC_BHA_Data<-StatsBombFreeEvents(MatchesDF = BRC_BHA, Parallel = T)
+
+P1_BRC_BHA<- BRC_BHA_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but able to keep Brighton in their defensive third. Recover ball 31 seconds after pass which leads to a shot (out for goal kick)
+P2_BRC_BHA<- BRC_BHA_Data %>%
+  filter(minute>=32 & minute<=34)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, shot, goal (Ebony Salmon)
+P3_BRC_BHA<- BRC_BHA_Data %>%
+  filter(minute>=40 & minute<=42)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, regain possession, clearance
+
+#vs United
+BRC_UTD<-Matches %>%
+  filter(match_id==3775601)
+BRC_UTD_Data<-StatsBombFreeEvents(MatchesDF = BRC_UTD, Parallel = T)
+
+P1_BRC_UTD<- BRC_UTD_Data %>%
+  filter(minute>=8 & minute<=10)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession. Ebony Salmon receiver
+P2_BRC_UTD<- BRC_UTD_Data %>%
+  filter(minute>=15 & minute<=17)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, carry, shot (Ebony Salmon)
+P3_BRC_UTD<- BRC_UTD_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+BRC_TOT<-Matches %>%
+  filter(match_id==3775631)
+BRC_TOT_Data<-StatsBombFreeEvents(MatchesDF = BRC_TOT, Parallel = T)
+
+P_BRC_TOT<- BRC_TOT_Data %>%
+  filter(minute>=32 & minute<=34)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Aston Villa
+BRC_AVI<-Matches %>%
+  filter(match_id==3775637)
+BRC_AVI_Data<-StatsBombFreeEvents(MatchesDF = BRC_AVI, Parallel = T)
+
+P_BRC_AVI<- BRC_AVI_Data %>%
+  filter(minute>=51 & minute<=53)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession (pass to Ebony Salmon)
+
+LongPassBristolA<- BristolAGameData %>%
+  filter(team.name=="Bristol City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Chelsea
+BRC_CHE<-Matches %>%
+  filter(match_id==3764235)
+BRC_CHE_Data<-StatsBombFreeEvents(MatchesDF = BRC_CHE, Parallel = T)
+
+P1_BRC_CHE<- BRC_CHE_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_BRC_CHE<- BRC_CHE_Data %>%
+  filter(minute>=54 & minute<=56)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Aston Villa 
+BRC_AVI2<-Matches %>%
+  filter(match_id==3775540)
+BRC_AVI2_Data<-StatsBombFreeEvents(MatchesDF = BRC_AVI2, Parallel = T)
+
+P_BRC_AVI2<- BRC_AVI2_Data %>%
+  filter(minute>=66 & minute<=68)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+
+#@ Tottenham
+BRC_TOT2<-Matches %>%
+  filter(match_id==3775546)
+BRC_TOT2_Data<-StatsBombFreeEvents(MatchesDF = BRC_TOT2, Parallel = T)
+
+P_BRC_TOT2<- BRC_TOT2_Data %>%
+  filter(minute>=56 & minute<=58)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Brighton
+BRC_BHA2<-Matches %>%
+  filter(match_id==3775585)
+BRC_BHA2_Data<-StatsBombFreeEvents(MatchesDF = BRC_BHA2, Parallel = T)
+
+P_BRC_BHA2<- BRC_BHA2_Data %>%
+  filter(minute>=90 & minute<=92)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Reading
+BRC_REA<-Matches %>%
+  filter(match_id==3775621)
+BRC_REA_Data<-StatsBombFreeEvents(MatchesDF = BRC_REA, Parallel = T)
+
+P_BRC_REA<- BRC_REA_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, carry, out for goal kick
+
+#@ City
+BRC_MNC<-Matches %>%
+  filter(match_id==3775625)
+BRC_MNC_Data<-StatsBombFreeEvents(MatchesDF = BRC_MNC, Parallel = T)
+
+P_BRC_MNC<- BRC_MNC_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Birmingham
+BRC_BIR<-Matches %>%
+  filter(match_id==3775654)
+BRC_BIR_Data<-StatsBombFreeEvents(MatchesDF = BRC_BIR, Parallel = T)
+
+P1_BRC_BIR<- BRC_BIR_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#reover ball and able to get possession in attacking third 11 seconds after pass
+P2_BRC_BIR<- BRC_BIR_Data %>%
+  filter(minute>=79 & minute<=81)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_BRC_BIR<- BRC_BIR_Data %>%
+  filter(minute>=92 & minute<=94)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#@ Arsenal
+BRC_ARS2<-Matches %>%
+  filter(match_id==3775657)
+BRC_ARS2_Data<-StatsBombFreeEvents(MatchesDF = BRC_ARS2, Parallel = T)
+
+P_BRC_ARS2<- BRC_ARS2_Data %>%
+  filter(minute>=57 & minute<=59)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+
+#Chelsea
+{ChelseaHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Chelsea FCW")
+ChelseaHGameData<-StatsBombFreeEvents(MatchesDF = ChelseaHomeMatches, Parallel = T)
+ChelseaHGameData = allclean(ChelseaHGameData)
+ChelseaAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Chelsea FCW")
+ChelseaAGameData<-StatsBombFreeEvents(MatchesDF = ChelseaAwayMatches, Parallel = T)
+ChelseaAGameData = allclean(ChelseaAGameData)
+
+ChelseaLineups<-ChelseaHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Chelsea FCW")
+LongPassChelseaH<- ChelseaHGameData %>%
+  filter(team.name=="Chelsea FCW")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Birmingham
+CHE_BIR<-Matches %>%
+  filter(match_id==3775565)
+CHE_BIR_Data<-StatsBombFreeEvents(MatchesDF = CHE_BIR, Parallel = T)
+
+P_CHE_BIR<- CHE_BIR_Data %>%
+  filter(minute>=52 & minute<=54)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, regained possession, lost possession
+
+#vs United
+CHE_UTD<-Matches %>%
+  filter(match_id==3775567)
+CHE_UTD_Data<-StatsBombFreeEvents(MatchesDF = CHE_UTD, Parallel = T)
+
+P1_CHE_UTD<- CHE_UTD_Data %>%
+  filter(minute>=64 & minute<=66)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass completed, carry, shot, goal
+P2_CHE_UTD<- CHE_UTD_Data %>%
+  filter(minute>=66 & minute<=68)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, out for goal kick
+
+#vs Aston Villa
+CHE_AVI<-Matches %>%
+  filter(match_id==3775581)
+CHE_AVI_Data<-StatsBombFreeEvents(MatchesDF = CHE_AVI, Parallel = T)
+
+P_CHE_AVI<- CHE_AVI_Data %>%
+  filter(minute>=61 & minute<=63)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass completed, pass, shot, out for goal kick
+
+#vs Reading
+CHE_REA<-Matches %>%
+  filter(match_id==3775593)
+CHE_REA_Data<-StatsBombFreeEvents(MatchesDF = CHE_REA, Parallel = T)
+
+P_CHE_REA<- CHE_REA_Data %>%
+  filter(minute>=89 & minute<=91)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+CHE_TOT<-Matches %>%
+  filter(match_id==3775605)
+CHE_TOT_Data<-StatsBombFreeEvents(MatchesDF = CHE_TOT, Parallel = T)
+
+P1_CHE_TOT<- CHE_TOT_Data %>%
+  filter(minute>=3 & minute<=5)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_CHE_TOT<- CHE_TOT_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession but able to keep Spurs in their defensive third. Regain possession 25 seconds later, possession leads to a shot & goal
+
+#vs Man City
+CHE_MNC<-Matches %>%
+  filter(match_id==3775611)
+CHE_MNC_Data<-StatsBombFreeEvents(MatchesDF = CHE_MNC, Parallel = T)
+
+P1_CHE_MNC<- CHE_MNC_Data %>%
+  filter(minute>=22 & minute<=24)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_CHE_MNC<- CHE_MNC_Data %>%
+  filter(minute>=43 & minute<=45)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_CHE_MNC<- CHE_MNC_Data %>%
+  filter(minute>=90 & minute<=92)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Everton
+CHE_EVE<-Matches %>%
+  filter(match_id==3775645)
+CHE_EVE_Data<-StatsBombFreeEvents(MatchesDF = CHE_EVE, Parallel = T)
+
+P_CHE_EVE<- CHE_EVE_Data %>%
+  filter(minute>=37 & minute<=39)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot out for goal kick
+
+#vs West Ham
+CHE_WHU<-Matches %>%
+  filter(match_id==3775650)
+CHE_WHU_Data<-StatsBombFreeEvents(MatchesDF = CHE_WHU, Parallel = T)
+
+P1_CHE_WHU<- CHE_WHU_Data %>%
+  filter(minute>=8 & minute<=10)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, ball recoveries, possession, shot out for goal kick
+P2_CHE_WHU<- CHE_WHU_Data %>%
+  filter(minute>=74 & minute<=76)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassChelseaA<- ChelseaAGameData %>%
+  filter(team.name=="Chelsea FCW")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Everton
+CHE_EVE2<-Matches %>%
+  filter(match_id==3775550)
+CHE_EVE2_Data<-StatsBombFreeEvents(MatchesDF = CHE_EVE2, Parallel = T)
+
+P1_CHE_EVE2<- CHE_EVE2_Data %>%
+  filter(minute>=0 & minute<=2)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but earn throw in in attack third 25 seconds later. possession, shot, corner
+P2_CHE_EVE2<- CHE_EVE2_Data %>%
+  filter(minute>=82 & minute<=84)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Tottenham
+CHE_TOT2<-Matches %>%
+  filter(match_id==3775555)
+CHE_TOT2_Data<-StatsBombFreeEvents(MatchesDF = CHE_TOT2, Parallel = T)
+
+P1_CHE_TOT2<- CHE_TOT2_Data %>%
+  filter(minute>=2 & minute<=4)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, free kick, shot that ends up w/ keeper
+P2_CHE_TOT2<- CHE_TOT2_Data %>%
+  filter(minute>=59 & minute<=61)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_CHE_TOT2<- CHE_TOT2_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, corner
+
+#@ City
+CHE_MNC2<-Matches %>%
+  filter(match_id==3775576)
+CHE_MNC2_Data<-StatsBombFreeEvents(MatchesDF = CHE_MNC2, Parallel = T)
+
+P_CHE_MNC2<- CHE_MNC2_Data %>%
+  filter(minute>=68 & minute<=70)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Brighton
+CHE_BHA<-Matches %>%
+  filter(match_id==3775580)
+CHE_BHA_Data<-StatsBombFreeEvents(MatchesDF = CHE_BHA, Parallel = T)
+
+P_CHE_BHA<- CHE_BHA_Data %>%
+  filter(minute>=89 & minute<=91)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recoveries, possession
+
+#@ West Ham
+CHE_WHU2<-Matches %>%
+  filter(match_id==3775591)
+CHE_WHU2_Data<-StatsBombFreeEvents(MatchesDF = CHE_WHU2, Parallel = T)
+
+P1_CHE_WHU2<- CHE_WHU2_Data %>%
+  filter(minute>=18 & minute<=20)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_CHE_WHU2<- CHE_WHU2_Data %>%
+  filter(minute>=35 & minute<=37)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+P3_CHE_WHU2<- CHE_WHU2_Data %>%
+  filter(minute>=42 & minute<=44)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+
+#@ Reading
+CHE_REA2<-Matches %>%
+  filter(match_id==3775606)
+CHE_REA2_Data<-StatsBombFreeEvents(MatchesDF = CHE_REA2, Parallel = T)
+
+P1_CHE_REA2<- CHE_REA2_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recoveries, possession, corner
+P2_CHE_REA2<- CHE_REA2_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession but kept Reading in their defensive third. Recovered 34 seconds after initial pass was made for possession in attacking third
+
+#@ Bristol City
+CHE_BRC<-Matches %>%
+  filter(match_id==3775614)
+CHE_BRC_Data<-StatsBombFreeEvents(MatchesDF = CHE_BRC, Parallel = T)
+
+P1_CHE_BRC<- CHE_BRC_Data %>%
+  filter(minute>=46 & minute<=48)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_CHE_BRC<- CHE_BRC_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recovery, possession, shot out for corner
+
+#@ Arsenal
+CHE_ARS<-Matches %>%
+  filter(match_id==3775627)
+CHE_ARS_Data<-StatsBombFreeEvents(MatchesDF = CHE_ARS, Parallel = T)
+
+P1_CHE_ARS<- CHE_ARS_Data %>%
+  filter(minute>=22 & minute<=24)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_CHE_ARS<- CHE_ARS_Data %>%
+  filter(minute>=49 & minute<=51)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_CHE_ARS<- CHE_ARS_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+
+#@ Aston Villa
+CHE_AVI2<-Matches %>%
+  filter(match_id==3775646)
+CHE_AVI2_Data<-StatsBombFreeEvents(MatchesDF = CHE_AVI2, Parallel = T)
+
+P1_CHE_AVI2<- CHE_AVI2_Data %>%
+  filter(minute>=22 & minute<=24)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_CHE_AVI2<- CHE_AVI2_Data %>%
+  filter(minute>=79 & minute<=81)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+
+#Everton
+{EvertonHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Everton LFC")
+EvertonHGameData<-StatsBombFreeEvents(MatchesDF = EvertonHomeMatches, Parallel = T)
+EvertonHGameData = allclean(EvertonHGameData)
+EvertonAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Everton LFC")
+EvertonAGameData<-StatsBombFreeEvents(MatchesDF = EvertonAwayMatches, Parallel = T)
+EvertonAGameData = allclean(EvertonAGameData)
+
+EvertonLineups<-EvertonHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Everton LFC")
+LongPassEvertonH<- EvertonHGameData %>%
+  filter(team.name=="Everton LFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Tottenham
+EVE_TOT<-Matches %>%
+  filter(match_id==3764239)
+EVE_TOT_Data<-StatsBombFreeEvents(MatchesDF = EVE_TOT, Parallel = T)
+
+P_EVE_TOT<- EVE_TOT_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P1: possession
+#P2: lost possession
+
+#vs Bristol City
+EVE_BRC<-Matches %>%
+  filter(match_id==3775542)
+EVE_BRC_Data<-StatsBombFreeEvents(MatchesDF = EVE_BRC, Parallel = T)
+
+P_EVE_BRC<- EVE_BRC_Data %>%
+  filter(minute>=65 & minute<=67)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recovery, throw in, possession, corner
+
+#vs Chelsea
+EVE_CHE<-Matches %>%
+  filter(match_id==3775550)
+EVE_CHE_Data<-StatsBombFreeEvents(MatchesDF = EVE_CHE, Parallel = T)
+
+P_EVE_CHE<- EVE_CHE_Data %>%
+  filter(minute>=53 & minute<=55)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+
+#vs Reading
+EVE_REA<-Matches %>%
+  filter(match_id==3775554)
+EVE_REA_Data<-StatsBombFreeEvents(MatchesDF = EVE_REA, Parallel = T)
+
+P1_EVE_REA<- EVE_REA_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession out for throw in. Able to keep Reading in def third and regain poss 44 seconds later. Following poss includes ball recovery, shot, corner
+P2_EVE_REA<- EVE_REA_Data %>%
+  filter(minute>=39 & minute<=41)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_EVE_REA<- EVE_REA_Data %>%
+  filter(minute>=54 & minute<=56)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs United
+EVE_UTD<-Matches %>%
+  filter(match_id==3775587)
+EVE_UTD_Data<-StatsBombFreeEvents(MatchesDF = EVE_UTD, Parallel = T)
+
+P1_EVE_UTD<- EVE_UTD_Data %>%
+  filter(minute>=7 & minute<=9)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_UTD<- EVE_UTD_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_EVE_UTD<- EVE_UTD_Data %>%
+  filter(minute>=88 & minute<=90)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+
+#vs Birmingham
+EVE_BIR<-Matches %>%
+  filter(match_id==3775590)
+EVE_BIR_Data<-StatsBombFreeEvents(MatchesDF = EVE_BIR, Parallel = T)
+
+P_EVE_BIR<- EVE_BIR_Data %>%
+  filter(minute>=11 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs West Ham
+EVE_WHU<-Matches %>%
+  filter(match_id==3775620)
+EVE_WHU_Data<-StatsBombFreeEvents(MatchesDF = EVE_WHU, Parallel = T)
+
+P_EVE_WHU<- EVE_WHU_Data %>%
+  filter(minute>=29 & minute<=31)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in
+
+#vs City
+EVE_MNC<-Matches %>%
+  filter(match_id==3775632)
+EVE_MNC_Data<-StatsBombFreeEvents(MatchesDF = EVE_MNC, Parallel = T)
+
+P_EVE_MNC<- EVE_MNC_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot 
+
+#vs Aston Villa
+EVE_AVI<-Matches %>%
+  filter(match_id==3775634)
+EVE_AVI_Data<-StatsBombFreeEvents(MatchesDF = EVE_AVI, Parallel = T)
+
+P1_EVE_AVI<- EVE_AVI_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_AVI<- EVE_AVI_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_EVE_AVI<- EVE_AVI_Data %>%
+  filter(minute>=75 & minute<=77)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession, shot
+
+LongPassEvertonA<- EvertonAGameData %>%
+  filter(team.name=="Everton LFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Bristol City
+EVE_BRC2<-Matches %>%
+  filter(match_id==3764240)
+EVE_BRC2_Data<-StatsBombFreeEvents(MatchesDF = EVE_BRC2, Parallel = T)
+
+P_EVE_BRC2<- EVE_BRC2_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#@ United
+EVE_UTD2<-Matches %>%
+  filter(match_id==3775563)
+EVE_UTD2_Data<-StatsBombFreeEvents(MatchesDF = EVE_UTD2, Parallel = T)
+
+P1_EVE_UTD2<- EVE_UTD2_Data %>%
+  filter(minute>=11 & minute<=13)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_UTD2<- EVE_UTD2_Data %>%
+  filter(minute>=21 & minute<=23)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_EVE_UTD2<- EVE_UTD2_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_EVE_UTD2<- EVE_UTD2_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Brighton
+EVE_BHA<-Matches %>%
+  filter(match_id==3775570)
+EVE_BHA_Data<-StatsBombFreeEvents(MatchesDF = EVE_BHA, Parallel = T)
+
+P1_EVE_BHA<- EVE_BHA_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_BHA<- EVE_BHA_Data %>%
+  filter(minute>=21 & minute<=23)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#pass, shot (pk?), goal
+P3_EVE_BHA<- EVE_BHA_Data %>%
+  filter(minute>=37 & minute<=39)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_EVE_BHA<- EVE_BHA_Data %>%
+  filter(minute>=58 & minute<=60)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Aston Villa
+EVE_AVI2<-Matches %>%
+  filter(match_id==3775575)
+EVE_AVI2_Data<-StatsBombFreeEvents(MatchesDF = EVE_AVI2, Parallel = T)
+
+P1_EVE_AVI2<- EVE_AVI2_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_AVI2<- EVE_AVI2_Data %>%
+  filter(minute>=73 & minute<=75)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#corner
+
+#@ West Ham
+EVE_WHU2<-Matches %>%
+  filter(match_id==3775635)
+EVE_WHU2_Data<-StatsBombFreeEvents(MatchesDF = EVE_WHU2, Parallel = T)
+
+P1_EVE_WHU2<- EVE_WHU2_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_EVE_WHU2<- EVE_WHU2_Data %>%
+  filter(minute>=15 & minute<=17)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+P3_EVE_WHU2<- EVE_WHU2_Data %>%
+  filter(minute>=82 & minute<=84)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#recovery, possession, shot
+}
+
+#Man City
+{MCityHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Manchester City WFC")
+MCityHGameData<-StatsBombFreeEvents(MatchesDF = MCityHomeMatches, Parallel = T)
+MCityHGameData = allclean(MCityHGameData)
+MCityAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Manchester City WFC")
+MCityAGameData<-StatsBombFreeEvents(MatchesDF = MCityAwayMatches, Parallel = T)
+MCityAGameData = allclean(MCityAGameData)
+
+MCityLineups<-MCityHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Manchester City WFC")
+LongPassMCityH<- MCityHGameData %>%
+  filter(team.name=="Manchester City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Brighton
+MNC_BHA<-Matches %>%
+  filter(match_id==3764241)
+MNC_BHA_Data<-StatsBombFreeEvents(MatchesDF = MNC_BHA, Parallel = T)
+
+P_MNC_BHA<- MNC_BHA_Data %>%
+  filter(minute>=79 & minute<=81)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottneham
+MNC_TOT<-Matches %>%
+  filter(match_id==3775545)
+MNC_TOT_Data<-StatsBombFreeEvents(MatchesDF = MNC_TOT, Parallel = T)
+
+P_MNC_TOT<- MNC_TOT_Data %>%
+  filter(minute>=53 & minute<=55)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Chelsea
+MNC_CHE<-Matches %>%
+  filter(match_id==3775576)
+MNC_CHE_Data<-StatsBombFreeEvents(MatchesDF = MNC_CHE, Parallel = T)
+
+P_MNC_CHE<- MNC_CHE_Data %>%
+  filter(minute>=91 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Arsenal
+MNC_ARS<-Matches %>%
+  filter(match_id==3775583)
+MNC_ARS_Data<-StatsBombFreeEvents(MatchesDF = MNC_ARS, Parallel = T)
+
+P_MNC_ARS<- MNC_ARS_Data %>%
+  filter(minute>=70 & minute<=72)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#Bristol City
+MNC_BRC<-Matches %>%
+  filter(match_id==3775625)
+MNC_BRC_Data<-StatsBombFreeEvents(MatchesDF = MNC_BRC, Parallel = T)
+
+P_MNC_BRC<- MNC_BRC_Data %>%
+  filter(minute>=46 & minute<=48)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession, shot goal
+
+#vs Aston Villa 
+MNC_AVI<-Matches %>%
+  filter(match_id==3775626)
+MNC_AVI_Data<-StatsBombFreeEvents(MatchesDF = MNC_AVI, Parallel = T)
+
+P_MNC_AVI<- MNC_AVI_Data %>%
+  filter(minute>=1 & minute<=3)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs United
+MNC_UTD<-Matches %>%
+  filter(match_id==3775658)
+MNC_UTD_Data<-StatsBombFreeEvents(MatchesDF = MNC_UTD, Parallel = T)
+
+P1_MNC_UTD<- MNC_UTD_Data %>%
+  filter(minute>=1 & minute<=3)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_MNC_UTD<- MNC_UTD_Data %>%
+  filter(minute>=6 & minute<=8)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassMCityA<- MCityAGameData %>%
+  filter(team.name=="Manchester City WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Aston Villa 
+MNC_AVI2<-Matches %>%
+  filter(match_id==3764234)
+MNC_AVI2_Data<-StatsBombFreeEvents(MatchesDF = MNC_AVI2, Parallel = T)
+
+P_MNC_AVI2<- MNC_AVI2_Data %>%
+  filter(minute>=35 & minute<=37)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ West Ham
+MNC_WHU<-Matches %>%
+  filter(match_id==3775573)
+MNC_WHU_Data<-StatsBombFreeEvents(MatchesDF = MNC_WHU, Parallel = T)
+
+P1_MNC_WHU<- MNC_WHU_Data %>%
+  filter(minute>=27 & minute<=29)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_MNC_WHU<- MNC_WHU_Data %>%
+  filter(minute>=36 & minute<=38)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but regain possession on edge of attacking third 35 seconds after pass. possession
+P3_MNC_WHU<- MNC_WHU_Data %>%
+  filter(minute>=78 & minute<=80)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, shot
+
+#@ Bristol City
+MNC_BRC2<-Matches %>%
+  filter(match_id==3775596)
+MNC_BRC2_Data<-StatsBombFreeEvents(MatchesDF = MNC_BRC2, Parallel = T)
+
+P_MNC_BRC2<- MNC_BRC2_Data %>%
+  filter(minute>=8 & minute<=10)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Arsenal
+MNC_ARS2<-Matches %>%
+  filter(match_id==3775600)
+MNC_ARS2_Data<-StatsBombFreeEvents(MatchesDF = MNC_ARS2, Parallel = T)
+
+P_MNC_ARS2<- MNC_ARS2_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Tottenham
+MNC_TOT2<-Matches %>%
+  filter(match_id==3775604)
+MNC_TOT2_Data<-StatsBombFreeEvents(MatchesDF = MNC_TOT2, Parallel = T)
+
+P_MNC_TOT2<- MNC_TOT2_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, recovery, possession, shot, goal
+
+#@ Chelsea
+MNC_CHE2<-Matches %>%
+  filter(match_id==3775611)
+MNC_CHE2_Data<-StatsBombFreeEvents(MatchesDF = MNC_CHE2, Parallel = T)
+
+P1_MNC_CHE2<- MNC_CHE2_Data %>%
+  filter(minute>=29 & minute<=31)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, recoveries
+P2_MNC_CHE2<- MNC_CHE2_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ United
+MNC_UTD2<-Matches %>%
+  filter(match_id==3775624)
+MNC_UTD2_Data<-StatsBombFreeEvents(MatchesDF = MNC_UTD2, Parallel = T)
+
+P_MNC_UTD2<- MNC_UTD2_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Brighton
+MNC_BHA2<-Matches %>%
+  filter(match_id==3775629)
+MNC_BHA2_Data<-StatsBombFreeEvents(MatchesDF = MNC_BHA2, Parallel = T)
+
+P1_MNC_BHA2<- MNC_BHA2_Data %>%
+  filter(minute>=51 & minute<=53)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+P2_MNC_BHA2<- MNC_BHA2_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Everton
+MNC_EVE<-Matches %>%
+  filter(match_id==3775632)
+MNC_EVE_Data<-StatsBombFreeEvents(MatchesDF = MNC_EVE, Parallel = T)
+
+P_MNC_EVE<- MNC_EVE_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+
+#Manchester United
+{UnitedHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Manchester United")
+UnitedHGameData<-StatsBombFreeEvents(MatchesDF = UnitedHomeMatches, Parallel = T)
+UnitedHGameData = allclean(UnitedHGameData)
+UnitedAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Manchester United")
+UnitedAGameData<-StatsBombFreeEvents(MatchesDF = UnitedAwayMatches, Parallel = T)
+UnitedAGameData = allclean(UnitedAGameData)
+
+UnitedLineups<-UnitedHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Manchester United")
+LongPassUnitedH<- UnitedHGameData %>%
+  filter(team.name=="Manchester United")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Chelsea
+UTD_CHE<-Matches %>%
+  filter(match_id==3764232)
+UTD_CHE_Data<-StatsBombFreeEvents(MatchesDF = UTD_CHE, Parallel = T)
+
+P1_UTD_CHE<- UTD_CHE_Data %>%
+  filter(minute>=40 & minute<=42)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_UTD_CHE<- UTD_CHE_Data %>%
+  filter(minute>=63 & minute<=65)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in
+
+#vs Aston Villa
+UTD_AVI<-Matches %>%
+  filter(match_id==3775541)
+UTD_AVI_Data<-StatsBombFreeEvents(MatchesDF = UTD_AVI, Parallel = T)
+
+P_UTD_AVI<- UTD_AVI_Data %>%
+  filter(minute>=56 & minute<=58)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs Arsenal
+UTD_ARS<-Matches %>%
+  filter(match_id==3775551)
+UTD_ARS_Data<-StatsBombFreeEvents(MatchesDF = UTD_ARS, Parallel = T)
+
+P_UTD_ARS<- UTD_ARS_Data %>%
+  filter(minute>=21 & minute<=23)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot out for goal kick
+
+#vs Everton
+UTD_EVE<-Matches %>%
+  filter(match_id==3775563)
+UTD_EVE_Data<-StatsBombFreeEvents(MatchesDF = UTD_EVE, Parallel = T)
+
+P_UTD_EVE<- UTD_EVE_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+UTD_TOT<-Matches %>%
+  filter(match_id==3775622)
+UTD_TOT_Data<-StatsBombFreeEvents(MatchesDF = UTD_TOT, Parallel = T)
+
+P_UTD_TOT<- UTD_TOT_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassUnitedA<- UnitedAGameData %>%
+  filter(team.name=="Manchester United")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Birmingham
+UTD_BIR<-Matches %>%
+  filter(match_id==3764237)
+UTD_BIR_Data<-StatsBombFreeEvents(MatchesDF = UTD_BIR, Parallel = T)
+
+P1_UTD_BIR<- UTD_BIR_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_UTD_BIR<- UTD_BIR_Data %>%
+  filter(minute>=81 & minute<=83)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Reading
+UTD_REA<-Matches %>%
+  filter(match_id==3775558)
+UTD_REA_Data<-StatsBombFreeEvents(MatchesDF = UTD_REA, Parallel = T)
+
+P_UTD_REA<- UTD_REA_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, shot, goal
+
+#@ West Ham
+UTD_WHU<-Matches %>%
+  filter(match_id==3775561)
+UTD_WHU_Data<-StatsBombFreeEvents(MatchesDF = UTD_WHU, Parallel = T)
+
+P1_UTD_WHU<- UTD_WHU_Data %>%
+  filter(minute>=26 & minute<=28)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_UTD_WHU<- UTD_WHU_Data %>%
+  filter(minute>=90 & minute<=92)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Aston Villa
+UTD_AVI2<-Matches %>%
+  filter(match_id==3775566)
+UTD_AVI2_Data<-StatsBombFreeEvents(MatchesDF = UTD_AVI2, Parallel = T)
+
+P1_UTD_AVI2<- UTD_AVI2_Data %>%
+  filter(minute>=30 & minute<=32)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_UTD_AVI2<- UTD_AVI2_Data %>%
+  filter(minute>=61 & minute<=63)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession (regained)
+
+#@ Arsenal
+UTD_ARS2<-Matches %>%
+  filter(match_id==3775597)
+UTD_ARS2_Data<-StatsBombFreeEvents(MatchesDF = UTD_ARS2, Parallel = T)
+
+P_UTD_ARS2<- UTD_ARS2_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Bristol City
+UTD_BRC<-Matches %>%
+  filter(match_id==3775601)
+UTD_BRC_Data<-StatsBombFreeEvents(MatchesDF = UTD_BRC, Parallel = T)
+
+P_UTD_BRC<- UTD_BRC_Data %>%
+  filter(minute>=62 & minute<=64)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Brighton
+UTD_BHA<-Matches %>%
+  filter(match_id==3775617)
+UTD_BHA_Data<-StatsBombFreeEvents(MatchesDF = UTD_BHA, Parallel = T)
+
+P_UTD_BHA<- UTD_BHA_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recoveries, possession, shot 31 seconds later
+
+#@ Tottenham
+UTD_TOT2<-Matches %>%
+  filter(match_id==3775644)
+UTD_TOT2_Data<-StatsBombFreeEvents(MatchesDF = UTD_TOT2, Parallel = T)
+
+P_UTD_TOT2<- UTD_TOT2_Data %>%
+  filter(minute>=51 & minute<=53)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Man City
+UTD_MNC<-Matches %>%
+  filter(match_id==3775658)
+UTD_MNC_Data<-StatsBombFreeEvents(MatchesDF = UTD_MNC, Parallel = T)
+
+P_UTD_MNC<- UTD_MNC_Data %>%
+  filter(minute>=19 & minute<=21)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+
+#Reading
+{ReadingHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Reading WFC")
+ReadingHGameData<-StatsBombFreeEvents(MatchesDF = ReadingHomeMatches, Parallel = T)
+ReadingHGameData = allclean(ReadingHGameData)
+ReadingAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Reading WFC")
+ReadingAGameData<-StatsBombFreeEvents(MatchesDF = ReadingAwayMatches, Parallel = T)
+ReadingAGameData = allclean(ReadingAGameData)
+
+ReadingLineups<-ReadingHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Reading WFC")
+LongPassReadingH<- ReadingHGameData %>%
+  filter(team.name=="Reading WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Aston Villa
+REA_AVI<-Matches %>%
+  filter(match_id==3764236)
+REA_AVI_Data<-StatsBombFreeEvents(MatchesDF = REA_AVI, Parallel = T)
+
+P_REA_AVI<- REA_AVI_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Man Utd
+REA_UTD<-Matches %>%
+  filter(match_id==3775558)
+REA_UTD_Data<-StatsBombFreeEvents(MatchesDF = REA_UTD, Parallel = T)
+
+P1_REA_UTD<- REA_UTD_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_REA_UTD<- REA_UTD_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, ball recovery, shot, goal
+P3_REA_UTD<- REA_UTD_Data %>%
+  filter(minute>=71 & minute<=73)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs Everton
+REA_EVE<-Matches %>%
+  filter(match_id==3775578)
+REA_EVE_Data<-StatsBombFreeEvents(MatchesDF = REA_EVE, Parallel = T)
+
+P_REA_EVE<- REA_EVE_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Brighton
+REA_BHA<-Matches %>%
+  filter(match_id==3775579)
+REA_BHA_Data<-StatsBombFreeEvents(MatchesDF = REA_BHA, Parallel = T)
+
+P1_REA_BHA<- REA_BHA_Data %>%
+  filter(minute>=11 & minute<=21)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_REA_BHA<- REA_BHA_Data %>%
+  filter(minute>=49 & minute<=51)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in, ball recovery shot, ball recovery, shot (out for goal kick)
+P3_REA_BHA<- REA_BHA_Data %>%
+  filter(minute>=54 & minute<=56)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, carry, shot, goal
+
+#vs Arsenal
+REA_ARS<-Matches %>%
+  filter(match_id==3775589)
+REA_ARS_Data<-StatsBombFreeEvents(MatchesDF = REA_ARS, Parallel = T)
+
+P1_REA_ARS<- REA_ARS_Data %>%
+  filter(minute>=7 & minute<=21)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, ball recovery 14 seconds after initial pass, possession
+P2_REA_ARS<- REA_ARS_Data %>%
+  filter(minute>=23 & minute<=25)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_REA_ARS<- REA_ARS_Data %>%
+  filter(minute>=80 & minute<=82)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_REA_ARS<- REA_ARS_Data %>%
+  filter(minute>=94 & minute<=96)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Chelsea
+REA_CHE<-Matches %>%
+  filter(match_id==3775606)
+REA_CHE_Data<-StatsBombFreeEvents(MatchesDF = REA_CHE, Parallel = T)
+
+P_REA_CHE<- REA_CHE_Data %>%
+  filter(minute>=64 & minute<=66)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, corner
+
+#vs Bristol City
+REA_BRC<-Matches %>%
+  filter(match_id==3775621)
+REA_BRC_Data<-StatsBombFreeEvents(MatchesDF = REA_BRC, Parallel = T)
+
+P_REA_BRC<- REA_BRC_Data %>%
+  filter(minute>=61 & minute<=63)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, ball recovery, possession
+
+#vs West Ham
+REA_WHU<-Matches %>%
+  filter(match_id==3775649)
+REA_WHU_Data<-StatsBombFreeEvents(MatchesDF = REA_WHU, Parallel = T)
+
+P1_REA_WHU<- REA_WHU_Data %>%
+  filter(minute>=35 & minute<=37)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in, ball recovery
+P2_REA_WHU<- REA_WHU_Data %>%
+  filter(minute>=57 & minute<=59)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs Man City
+REA_MNC<-Matches %>%
+  filter(match_id==3775659)
+REA_MNC_Data<-StatsBombFreeEvents(MatchesDF = REA_MNC, Parallel = T)
+
+P_REA_MNC<- REA_MNC_Data %>%
+  filter(minute>=54 & minute<=56)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassReadingA<- ReadingAGameData %>%
+  filter(team.name=="Reading WFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Everton
+REA_EVE2<-Matches %>%
+  filter(match_id==3775554)
+REA_EVE2_Data<-StatsBombFreeEvents(MatchesDF = REA_EVE2, Parallel = T)
+
+P1_REA_EVE2<- REA_EVE2_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_REA_EVE2<- REA_EVE2_Data %>%
+  filter(minute>=45 & minute<=47)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P2: lost possession
+#P3: lost possession
+P4_REA_EVE2<- REA_EVE2_Data %>%
+  filter(minute>=76 & minute<=78)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P5_REA_EVE2<- REA_EVE2_Data %>%
+  filter(minute>=86 & minute<=88)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Man City
+REA_MNC2<-Matches %>%
+  filter(match_id==3775564)
+REA_MNC2_Data<-StatsBombFreeEvents(MatchesDF = REA_MNC2, Parallel = T)
+
+P1_REA_MNC2<- REA_MNC2_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_REA_MNC2<- REA_MNC2_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, lost possession, regained possession
+
+#@ Chelsea
+REA_CHE2<-Matches %>%
+  filter(match_id==3775593)
+REA_CHE2_Data<-StatsBombFreeEvents(MatchesDF = REA_CHE2, Parallel = T)
+
+P_REA_CHE2<- REA_CHE2_Data %>%
+  filter(minute>=5 & minute<=7)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, corner
+
+#@ West Ham
+REA_WHU2<-Matches %>%
+  filter(match_id==3775602)
+REA_WHU2_Data<-StatsBombFreeEvents(MatchesDF = REA_WHU2, Parallel = T)
+
+P1_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=3 & minute<=5)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+P3_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=29 & minute<=31)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=31 & minute<=33)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recovery, possession
+P5_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=61 & minute<=63)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P6_REA_WHU2<- REA_WHU2_Data %>%
+  filter(minute>=91 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Bristol City
+REA_BRC2<-Matches %>%
+  filter(match_id==3775607)
+REA_BRC2_Data<-StatsBombFreeEvents(MatchesDF = REA_BRC2, Parallel = T)
+
+P_REA_BRC2<- REA_BRC2_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Birmingham
+REA_BIR<-Matches %>%
+  filter(match_id==3775612)
+REA_BIR_Data<-StatsBombFreeEvents(MatchesDF = REA_BIR, Parallel = T)
+
+P_REA_BIR<- REA_BIR_Data %>%
+  filter(minute>=91 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#ball recovery, possession, shot
+
+#@ Brighton
+REA_BHA2<-Matches %>%
+  filter(match_id==3775619)
+REA_BHA2_Data<-StatsBombFreeEvents(MatchesDF = REA_BHA2, Parallel = T)
+
+P1_REA_BHA2<- REA_BHA2_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P2_REA_BHA2<- REA_BHA2_Data %>%
+  filter(minute>=36 & minute<=38)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P3_REA_BHA2<- REA_BHA2_Data %>%
+  filter(minute>=38 & minute<=40)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, lost possession, regained possession 6 seconds later
+
+#@ United
+REA_UTD2<-Matches %>%
+  filter(match_id==3775640)
+REA_UTD2_Data<-StatsBombFreeEvents(MatchesDF = REA_UTD2, Parallel = T)
+
+P1_REA_UTD2<- REA_UTD2_Data %>%
+  filter(minute>=5 & minute<=7)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_REA_UTD2<- REA_UTD2_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_REA_UTD2<- REA_UTD2_Data %>%
+  filter(minute>=49 & minute<=51)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+P4_REA_UTD2<- REA_UTD2_Data %>%
+  filter(minute>=63 & minute<=65)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in, possession, free kick, shot, goal
+}
+
+#Tottenham
+{SpursHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="Tottenham Hotspur Women")
+SpursHGameData<-StatsBombFreeEvents(MatchesDF = SpursHomeMatches, Parallel = T)
+SpursHGameData = allclean(SpursHGameData)
+SpursAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="Tottenham Hotspur Women")
+SpursAGameData<-StatsBombFreeEvents(MatchesDF = SpursAwayMatches, Parallel = T)
+SpursAGameData = allclean(SpursAGameData)
+
+SpursLineups<-SpursHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="Tottenham Hotspur Women")
+LongPassSpursH<- SpursHGameData %>%
+  filter(team.name=="Tottenham Hotspur Women")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs West Ham
+TOT_WHU<-Matches %>%
+  filter(match_id==3764230)
+TOT_WHU_Data<-StatsBombFreeEvents(MatchesDF = TOT_WHU, Parallel = T)
+
+P_TOT_WHU<- TOT_WHU_Data %>%
+  filter(minute>=50 & minute<=52)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#vs Everton
+TOT_EVE<-Matches %>%
+  filter(match_id==3775552)
+TOT_EVE_Data<-StatsBombFreeEvents(MatchesDF = TOT_EVE, Parallel = T)
+
+P1_TOT_EVE<- TOT_EVE_Data %>%
+  filter(minute>=23 & minute<=25)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_TOT_EVE<- TOT_EVE_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, and recovered ball outside attacking third. possession, shot, goal ???????
+
+#vs Brighton
+TOT_BHA<-Matches %>%
+  filter(match_id==3775588)
+TOT_BHA_Data<-StatsBombFreeEvents(MatchesDF = TOT_BHA, Parallel = T)
+
+P1_TOT_BHA<- TOT_BHA_Data %>%
+  filter(minute>=2 & minute<=4)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in, ball recovery
+P2_TOT_BHA<- TOT_BHA_Data %>%
+  filter(minute>=46 & minute<=48)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+
+#vs Reading
+TOT_REA<-Matches %>%
+  filter(match_id==3775592)
+TOT_REA_Data<-StatsBombFreeEvents(MatchesDF = TOT_REA, Parallel = T)
+
+P_TOT_REA<- TOT_REA_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Arsenal
+TOT_ARS<-Matches %>%
+  filter(match_id==3775613)
+TOT_ARS_Data<-StatsBombFreeEvents(MatchesDF = TOT_ARS, Parallel = T)
+
+P1_TOT_ARS<- TOT_ARS_Data %>%
+  filter(minute>=11 & minute<=13)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_TOT_ARS<- TOT_ARS_Data %>%
+  filter(minute>=15 & minute<=17)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P2: possession
+#P3: lost possession
+P4_TOT_ARS<- TOT_ARS_Data %>%
+  filter(minute>=67 & minute<=69)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession
+
+#vs Aston Villa
+TOT_AVI<-Matches %>%
+  filter(match_id==3775615)
+TOT_AVI_Data<-StatsBombFreeEvents(MatchesDF = TOT_AVI, Parallel = T)
+
+P_TOT_AVI<- TOT_AVI_Data %>%
+  filter(minute>=87 & minute<=89)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs United
+TOT_UTD<-Matches %>%
+  filter(match_id==3775644)
+TOT_UTD_Data<-StatsBombFreeEvents(MatchesDF = TOT_UTD, Parallel = T)
+
+P_TOT_UTD<- TOT_UTD_Data %>%
+  filter(minute>=8 & minute<=10)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+LongPassSpursA<- SpursAGameData %>%
+  filter(team.name=="Tottenham Hotspur Women")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Everton
+TOT_EVE2<-Matches %>%
+  filter(match_id==3764239)
+TOT_EVE2_Data<-StatsBombFreeEvents(MatchesDF = TOT_EVE2, Parallel = T)
+
+P1_TOT_EVE2<- TOT_EVE2_Data %>%
+  filter(minute>=11 & minute<=13)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_TOT_EVE2<- TOT_EVE2_Data %>%
+  filter(minute>=74 & minute<=76)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in, possession, shot
+P3_TOT_EVE2<- TOT_EVE2_Data %>%
+  filter(minute>=90 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+
+#@ Reading
+TOT_REA2<-Matches %>%
+  filter(match_id==3775598)
+TOT_REA2_Data<-StatsBombFreeEvents(MatchesDF = TOT_REA2, Parallel = T)
+
+P_TOT_REA2<- TOT_REA2_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Chelsea
+TOT_CHE<-Matches %>%
+  filter(match_id==3775605)
+TOT_CHE_Data<-StatsBombFreeEvents(MatchesDF = TOT_CHE, Parallel = T)
+
+P1_TOT_CHE<- TOT_CHE_Data %>%
+  filter(minute>=5 & minute<=7)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_TOT_CHE<- TOT_CHE_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ West Ham
+TOT_WHU2<-Matches %>%
+  filter(match_id==3775608)
+TOT_WHU2_Data<-StatsBombFreeEvents(MatchesDF = TOT_WHU2, Parallel = T)
+
+P_TOT_WHU2<- TOT_WHU2_Data %>%
+  filter(minute>=24 & minute<=26)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Aston Villa
+TOT_AVI2<-Matches %>%
+  filter(match_id==3775633)
+TOT_AVI2_Data<-StatsBombFreeEvents(MatchesDF = TOT_AVI2, Parallel = T)
+
+P_TOT_AVI2<- TOT_AVI2_Data %>%
+  filter(minute>=3 & minute<=5)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, ball recovery, throw in, free kick
+
+#@ Brighton
+TOT_BHA2<-Matches %>%
+  filter(match_id==3775638)
+TOT_BHA2_Data<-StatsBombFreeEvents(MatchesDF = TOT_BHA2, Parallel = T)
+
+P1_TOT_BHA2<- TOT_BHA2_Data %>%
+  filter(minute>=25 & minute<=27)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_TOT_BHA2<- TOT_BHA2_Data %>%
+  filter(minute>=76 & minute<=78)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+
+#West Ham
+{WHamHomeMatches<-Matches %>%
+  filter(home_team.home_team_name=="West Ham United LFC")
+WHamHGameData<-StatsBombFreeEvents(MatchesDF = WHamHomeMatches, Parallel = T)
+WHamHGameData = allclean(WHamHGameData)
+WHamAwayMatches<-Matches %>%
+  filter(away_team.away_team_name=="West Ham United LFC")
+WHamAGameData<-StatsBombFreeEvents(MatchesDF = WHamAwayMatches, Parallel = T)
+WHamAGameData = allclean(WHamAGameData)
+
+WHamLineups<-WHamHGameData %>%
+  filter(type.name=="Starting XI")%>%
+  filter(team.name=="West Ham United LFC")
+LongPassWHamH<- WHamHGameData %>%
+  filter(team.name=="West Ham United LFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Wing Back" | position.name=="Left Wing Back")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#vs Arsenal
+WHU_ARS<-Matches %>%
+  filter(match_id==3764238)
+WHU_ARS_Data<-StatsBombFreeEvents(MatchesDF = WHU_ARS, Parallel = T)
+
+P_WHU_ARS<- WHU_ARS_Data %>%
+  filter(minute>=28 & minute<=30)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+
+#vs Man Utd
+WHU_UTD<-Matches %>%
+  filter(match_id==3775561)
+WHU_UTD_Data<-StatsBombFreeEvents(MatchesDF = WHU_UTD, Parallel = T)
+
+P1_WHU_UTD<- WHU_UTD_Data %>%
+  filter(minute>=6 & minute<=8)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#throw in
+P2_WHU_UTD<- WHU_UTD_Data %>%
+  filter(minute>=47 & minute<=49)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P3_WHU_UTD<- WHU_UTD_Data %>%
+  filter(minute>=52 & minute<=54)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in
+P4_WHU_UTD<- WHU_UTD_Data %>%
+  filter(minute>=90 & minute<=93)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+
+#vs Man City
+WHU_MNC<-Matches %>%
+  filter(match_id==3775573)
+WHU_MNC_Data<-StatsBombFreeEvents(MatchesDF = WHU_MNC, Parallel = T)
+
+P1_WHU_MNC<- WHU_MNC_Data %>%
+  filter(minute>=36 & minute<=38)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_WHU_MNC<- WHU_MNC_Data %>%
+  filter(minute>=65 & minute<=67)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_WHU_MNC<- WHU_MNC_Data %>%
+  filter(minute>=78 & minute<=80)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Chelsea
+WHU_CHE<-Matches %>%
+  filter(match_id==3775591)
+WHU_CHE_Data<-StatsBombFreeEvents(MatchesDF = WHU_CHE, Parallel = T)
+
+P1_WHU_CHE<- WHU_CHE_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P1: lost possession
+#P2: lost possession
+P3_WHU_CHE<- WHU_CHE_Data %>%
+  filter(minute>=53 & minute<=55)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Reading
+WHU_REA<-Matches %>%
+  filter(match_id==3775602)
+WHU_REA_Data<-StatsBombFreeEvents(MatchesDF = WHU_REA, Parallel = T)
+
+P_WHU_REA<- WHU_REA_Data %>%
+  filter(minute>=1 & minute<=3)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Tottenham
+WHU_TOT<-Matches %>%
+  filter(match_id==3775608)
+WHU_TOT_Data<-StatsBombFreeEvents(MatchesDF = WHU_TOT, Parallel = T)
+
+P_WHU_TOT<- WHU_TOT_Data %>%
+  filter(minute>=4 & minute<=6)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#vs Brighton
+WHU_BHA<-Matches %>%
+  filter(match_id==3775623)
+WHU_BHA_Data<-StatsBombFreeEvents(MatchesDF = WHU_BHA, Parallel = T)
+
+P1_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=10 & minute<=12)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+P2_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=12 & minute<=14)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P3_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#corner
+P4_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=25 & minute<=27)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P5_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=42 & minute<=44)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+P6_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=52 & minute<=54)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P7_WHU_BHA<- WHU_BHA_Data %>%
+  filter(minute>=88 & minute<=90)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#cleared
+
+LongPassWHamA<- WHamAGameData %>%
+  filter(team.name=="West Ham United LFC")%>%
+  filter(position.name=="Left Back" | position.name=="Left Center Back" | position.name=="Right Center Back"|
+           position.name=="Right Back" | position.name=="Center Defensive Midfield" | position.name=="Goalkeeper" |
+           position.name=="Right Center Midfield" | position.name=="Left Center Midfield" |
+           position.name=="Right Defensive Midfield" | position.name=="Left Defensive Midfield" |
+           position.name=="Right Wing Back" | position.name=="Left Wing Back")%>%
+  filter(type.name=="Pass")%>%
+  filter(play_pattern.name=="Regular Play")%>%
+  filter(location.x<40 & location.y>0 & location.y<80)%>%
+  filter(pass.end_location.x>80 & pass.end_location.y>0 & pass.end_location.y<80)%>%
+  select(minute,second,match_id,id)
+
+#@ Tottenham
+WHU_TOT2<-Matches %>%
+  filter(match_id==3764230)
+WHU_TOT2_Data<-StatsBombFreeEvents(MatchesDF = WHU_TOT2, Parallel = T)
+
+P_WHU_TOT2<- WHU_TOT2_Data %>%
+  filter(minute>=55 & minute<=57)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#completed pass, carry, shot, goal
+
+#@ Aston Villa
+WHU_AVI<-Matches %>%
+  filter(match_id==3775544)
+WHU_AVI_Data<-StatsBombFreeEvents(MatchesDF = WHU_AVI, Parallel = T)
+
+P1_WHU_AVI<- WHU_AVI_Data %>%
+  filter(minute>=20 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession 
+P2_WHU_AVI<- WHU_AVI_Data %>%
+  filter(minute>=83 & minute<=85)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, but regained possession 17 seconds later in attacking third
+P3_WHU_AVI<- WHU_AVI_Data %>%
+  filter(minute>=91 & minute<=94)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+
+#@ Birmingham
+WHU_BIR<-Matches %>%
+  filter(match_id==3775553)
+WHU_BIR_Data<-StatsBombFreeEvents(MatchesDF = WHU_BIR, Parallel = T)
+
+P1_WHU_BIR<- WHU_BIR_Data %>%
+  filter(minute>=11 & minute<=22)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P2_WHU_BIR<- WHU_BIR_Data %>%
+  filter(minute>=48 & minute<=50)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession
+P3_WHU_BIR<- WHU_BIR_Data %>%
+  filter(minute>=46 & minute<=48)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+P4_WHU_BIR<- WHU_BIR_Data %>%
+  filter(minute>=84 & minute<=86)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#P4: cleared
+#P5: lost possession
+
+#@ Brighton
+WHU_BHA2<-Matches %>%
+  filter(match_id==3775603)
+WHU_BHA2_Data<-StatsBombFreeEvents(MatchesDF = WHU_BHA2, Parallel = T)
+
+P_WHU_BHA2<- WHU_BHA2_Data %>%
+  filter(minute>=62 & minute<=64)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Bristol City
+WHU_BRC<-Matches %>%
+  filter(match_id==3775616)
+WHU_BRC_Data<-StatsBombFreeEvents(MatchesDF = WHU_BRC, Parallel = T)
+
+P1_WHU_BRC<- WHU_BRC_Data %>%
+  filter(minute>=17 & minute<=19)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, throw in, shot
+P2_WHU_BRC<- WHU_BRC_Data %>%
+  filter(minute>=57 & minute<=59)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot, goal
+
+#@ Man Utd
+WHU_UTD2<-Matches %>%
+  filter(match_id==3775628)
+WHU_UTD2_Data<-StatsBombFreeEvents(MatchesDF = WHU_UTD2, Parallel = T)
+
+P1_WHU_UTD2<- WHU_UTD2_Data %>%
+  filter(minute>=43 & minute<=45)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession, regained poss 25 seconds later on edge of attack third, poss, shot
+P2_WHU_UTD2<- WHU_UTD2_Data %>%
+  filter(minute>=60 & minute<=62)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession, shot
+P3_WHU_UTD2<- WHU_UTD2_Data %>%
+  filter(minute>=69 & minute<=71)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+
+#@ Man City
+WHU_MNC2<-Matches %>%
+  filter(match_id==3775651)
+WHU_MNC2_Data<-StatsBombFreeEvents(MatchesDF = WHU_MNC2, Parallel = T)
+
+P1_WHU_MNC2<- WHU_MNC2_Data %>%
+  filter(minute>=34 & minute<=36)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#possession on edge of attack third and ends inside third
+P2_WHU_MNC2<- WHU_MNC2_Data %>%
+  filter(minute>=72 & minute<=74)%>%
+  filter(type.name=="Shot" | type.name=="Pass" | type.name=="Clearance" | type.name=="Block" | type.name=="Ball Recovery" |
+           type.name=="Carry")
+#lost possession
+}
+```
+
+# ggplot Bar Plot of Long Pass Attempts
+```{r Graph Setup, eval=TRUE}
+Team<-c("Arsenal","Aston Villa","Birmingham","Bristol City","Brighton",
+        "Chelsea","Everton","Manchester City","Manchester United",
+        "Reading","Tottenham","West Ham")
+Passes<-c(24,28,35,29,26,32,30,21,18,40,22,37)
+
+LP<-data.frame(Team,Passes)
+
+ggplot(data = LP, aes(x=reorder(Team,Passes), y=Passes))+
+  geom_bar(stat = "identity", fill="lightsalmon3")+
+  coord_flip()+
+  labs(x = "",
+       title = "Forward Long Passes in Open Play",
+       subtitle = "2020/2021 WSL Season | Data: Statsbomb")
+```
